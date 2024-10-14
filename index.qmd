@@ -1,0 +1,210 @@
+---
+title: "Box plots"
+author: "Raina"
+format: html
+editor: visual
+---
+
+## Box plots
+
+```{r}
+library(tidyverse)
+library(mosaic)
+library(ggformula)
+library(palmerpenguins)
+library(GGally)
+library(corrplot)
+library(ggExtra)
+library(easystats)
+library(correlation)
+library(Lock5withR)# Our new favourite dataset
+```
+
+```{r}
+wages <- read_csv("https://vincentarelbundock.github.io/Rdatasets/csv/stevedata/gss_wages.csv")
+```
+
+```{r}
+glimpse(wages)
+
+```
+
+```{r}
+wages_clean <-
+  wages %>%
+  tidyr::drop_na(realrinc) # choose column or leave blank to choose all
+```
+
+###What is the basic distribution of `realrinc`?\*\*
+
+```{r}
+wages_clean %>%
+  gf_boxplot(realrinc ~ "Income") %>% # Dummy X-axis "variable"
+  gf_labs(
+    title = "Plot 1A: Income has a skewed distribution",
+    subtitle = "Many outliers on the high side"
+  )
+```
+
+### **###Is `realrinc` affected by `gender`?**
+
+```{r}
+wages_clean %>%
+  gf_boxplot(gender ~ realrinc) %>%
+  gf_labs(title = "Plot 2A: Income by Gender")
+```
+
+```{r}
+wages_clean %>%
+  gf_boxplot(gender ~ log10(realrinc)) %>%
+  gf_labs(title = "Plot 2B: Log(Income) by Gender")
+```
+
+```{r}
+wages_clean %>%
+  gf_boxplot(gender ~ realrinc, fill = ~gender) %>%
+  gf_refine(scale_x_log10()) %>%
+  gf_labs(title = "Plot 2C: Income filled by Gender, log scale")
+```
+
+\##**Is `realrinc` affected by `educcat`?**
+
+```{r}
+wages_clean %>%
+  gf_boxplot(educcat ~ realrinc) %>%
+  gf_labs(title = "Plot 3A: Income by Education Category")
+```
+
+```{r}
+wages_clean %>%
+  gf_boxplot(educcat ~ log10(realrinc)) %>%
+  gf_labs(title = "Plot 3B: Log(Income) by Education Category")
+```
+
+```{r}
+wages_clean %>%
+  gf_boxplot(
+    reorder(educcat, realrinc, FUN = median) ~ log(realrinc),
+    fill = ~educcat,
+    alpha = 0.3
+  ) %>%
+  gf_labs(title = "Plot 3C: Log(Income) by Education Category, sorted") %>%
+  gf_labs(
+    x = "Log Income",
+    y = "Education Category"
+  )
+```
+
+```{r}
+wages_clean %>%
+  gf_boxplot(reorder(educcat, realrinc, FUN = median) ~ realrinc,
+    fill = ~educcat,
+    alpha = 0.5
+  ) %>%
+  gf_refine(scale_x_log10()) %>%
+  gf_labs(
+    title = "Plot 3D: Income by Education Category, sorted",
+    subtitle = "Log Income"
+  ) %>%
+  gf_labs(
+    x = "Income",
+    y = "Education Category"
+  )
+```
+
+\##**Is the target variable `realrinc` affected by combinations of Qual factors `gender`, `educcat`, `maritalcat` and `childs`?**
+
+```{r}
+wages %>%
+  drop_na() %>%
+  gf_boxplot(reorder(educcat, realrinc) ~ log10(realrinc),
+    fill = ~educcat,
+    alpha = 0.5
+  ) %>%
+  gf_facet_wrap(vars(childs)) %>%
+  gf_refine(scale_fill_brewer(type = "qual", palette = "Dark2")) %>%
+  gf_labs(
+    title = "Plot 4A: Log Income by Education Category and Family Size",
+    x = "Log income",
+    y = "No. of Children"
+  )
+```
+
+```{r}
+wages %>%
+  drop_na() %>%
+  mutate(childs = as_factor(childs)) %>%
+  gf_boxplot(childs ~ log10(realrinc),
+    group = ~childs,
+    fill = ~childs,
+    alpha = 0.5
+  ) %>%
+  gf_facet_wrap(~gender) %>%
+  gf_refine(scale_fill_brewer(type = "qual", palette = "Set3")) %>%
+  gf_labs(
+    title = "Plot 4B: Log Income by Gender and Family Size",
+    x = "Log income",
+    y = "No. of Children"
+  )
+```
+
+### Change
+
+```{r}
+HollywoodMovies2011 -> movies
+glimpse(movies)
+```
+
+```{r}
+movies_quant <- movies %>%
+  drop_na() %>%
+  select(where(is.numeric))
+movies_quant
+```
+
+```{r}
+
+movies %>%
+  gf_point(DomesticGross ~ WorldGross) %>%
+  gf_lm() %>%
+  gf_labs(
+    title = "Scatter Plot",
+    subtitle = "Movie Gross Earnings: Domestics vs World"
+  )
+```
+
+```{r}
+movies %>%
+  gf_point(Profitability ~ OpeningWeekend) %>%
+  gf_lm() %>%
+  gf_labs(
+    title = "Scatter Plot",
+    subtitle = "Movies: Does Opening Week Earnings indicate Profitability?"
+  )
+```
+
+```{r}
+movies %>%
+  gf_point(RottenTomatoes ~ AudienceScore) %>%
+  gf_lm() %>%
+  gf_labs(
+    title = "Scatter Plot",
+    subtitle = "Movie Ratings: Tomatoes vs Audience"
+  )
+```
+
+```{r}
+
+movies %>%
+  drop_na() %>%
+  gf_point(RottenTomatoes ~ AudienceScore,
+    color = ~Genre
+  ) %>%
+  gf_lm() %>%
+  gf_labs(
+    title = "Scatter Plot",
+    subtitle = "Movie Ratings: Trends by Genre"
+  )
+```
+
+

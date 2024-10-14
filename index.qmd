@@ -1,210 +1,305 @@
----
-title: "Box plots"
-author: "Raina"
-format: html
-editor: visual
----
+## Assignments-
 
-## Box plots
+## A1
+
+## Apartments Dataset
 
 ```{r}
 library(tidyverse)
 library(mosaic)
 library(ggformula)
-library(palmerpenguins)
-library(GGally)
-library(corrplot)
-library(ggExtra)
-library(easystats)
-library(correlation)
-library(Lock5withR)# Our new favourite dataset
+library(skimr)
+library(crosstable)
+library(knitr)
+library(kableExtra)
+library(DT)
+library(dplyr)
+library(ggplot2)
 ```
 
 ```{r}
-wages <- read_csv("https://vincentarelbundock.github.io/Rdatasets/csv/stevedata/gss_wages.csv")
+apartments <- read.csv("apartments.csv", sep = ";")
 ```
 
 ```{r}
-glimpse(wages)
+glimpse(apartments)
+skim(apartments)
+```
+
+```{r}
+head(apartments)
+tail(apartments)
+```
+
+```{r}
+ggplot(apartments,aes(x=GrLivArea)) +
+  geom_histogram()
+```
+
+```{r}
+#  histogram of the SalePrice column
+gf_histogram(~ SalePrice, data = apartments, bins = 30) +
+  labs(title = "Histogram of Sale Prices",
+       x = "Sale Price",
+       y = "Frequency")
+```
+
+```{r}
+#  histogram of the Living Area (GrLivArea)
+gf_histogram(~ GrLivArea, data = apartments, bins = 30) +
+  labs(title = "Histogram of Living Area",
+       x = "Living Area (sq ft)",
+       y = "Frequency")
+```
+
+```{r}
+# Bar plot for apartment types 
+gf_bar(~ GrLivArea, data = apartments) +
+  labs(title = "Distribution of Apartments by Type",
+       x = "Apartment Type",
+       y = "Count")
+```
+
+```{r}
+#What is the distribution of apartments based on different sale price ranges?
+apartments <- apartments %>%
+  mutate(SalePrice = cut(SalePrice,
+                             breaks = c(0, 100000, 300000, 500000, Inf),
+                             labels = c("Low", "Medium", "High", "Very High")))
+gf_bar(~ SalePrice, data = apartments) +
+  labs(title = "Distribution of Apartments by Sale Price Category",
+       x = "Sale Price Category",
+       y = "Count")
+```
+
+```{r}
+#What is the distribution of apartments based on different area sizes?
+apartments <- apartments %>%
+  mutate(GrLivArea = cut(GrLivArea,
+                            breaks = c(0, 500, 1000, 1500, 2000, Inf),
+                            labels = c("Very Small", "Small", "Medium", "Large", "Very Large")))
+gf_bar(~ GrLivArea, data = apartments) +
+  labs(title = "Distribution of Apartments by Area Category",
+       x = "Area Category",
+       y = "Count")
+```
+
+```{r}
+#What is the distribution of apartments where the area is above or below a certain threshold (e.g., 1000 sq ft)?
+
+apartments <- apartments %>%
+  mutate(GrLivArea = ifelse(GrLivArea > 1000, "Above 1000 sq ft", "Below 1000 sq ft"))
+
+gf_bar(~ GrLivArea, data = apartments) +
+  labs(title = "Distribution of Apartments by Area (Above or Below 1000 sq ft)",
+       x = "Area Category",
+       y = "Count")
 
 ```
 
 ```{r}
-wages_clean <-
-  wages %>%
-  tidyr::drop_na(realrinc) # choose column or leave blank to choose all
-```
-
-###What is the basic distribution of `realrinc`?\*\*
-
-```{r}
-wages_clean %>%
-  gf_boxplot(realrinc ~ "Income") %>% # Dummy X-axis "variable"
-  gf_labs(
-    title = "Plot 1A: Income has a skewed distribution",
-    subtitle = "Many outliers on the high side"
-  )
-```
-
-### **###Is `realrinc` affected by `gender`?**
-
-```{r}
-wages_clean %>%
-  gf_boxplot(gender ~ realrinc) %>%
-  gf_labs(title = "Plot 2A: Income by Gender")
-```
-
-```{r}
-wages_clean %>%
-  gf_boxplot(gender ~ log10(realrinc)) %>%
-  gf_labs(title = "Plot 2B: Log(Income) by Gender")
-```
-
-```{r}
-wages_clean %>%
-  gf_boxplot(gender ~ realrinc, fill = ~gender) %>%
-  gf_refine(scale_x_log10()) %>%
-  gf_labs(title = "Plot 2C: Income filled by Gender, log scale")
-```
-
-\##**Is `realrinc` affected by `educcat`?**
-
-```{r}
-wages_clean %>%
-  gf_boxplot(educcat ~ realrinc) %>%
-  gf_labs(title = "Plot 3A: Income by Education Category")
-```
-
-```{r}
-wages_clean %>%
-  gf_boxplot(educcat ~ log10(realrinc)) %>%
-  gf_labs(title = "Plot 3B: Log(Income) by Education Category")
-```
-
-```{r}
-wages_clean %>%
-  gf_boxplot(
-    reorder(educcat, realrinc, FUN = median) ~ log(realrinc),
-    fill = ~educcat,
-    alpha = 0.3
+apartments %>%
+  gf_bar(~SalePrice,
+    fill = ~GrLivArea,
+    position = "dodge"
   ) %>%
-  gf_labs(title = "Plot 3C: Log(Income) by Education Category, sorted") %>%
-  gf_labs(
-    x = "Log Income",
-    y = "Education Category"
-  )
+  gf_labs(title = "Plot 2A: Dodged Bar Chart")
+```
+
+## StarTrek dataset
+
+```{r}
+StarTrek <- read.csv("StarTrek.csv", sep=";")
+
 ```
 
 ```{r}
-wages_clean %>%
-  gf_boxplot(reorder(educcat, realrinc, FUN = median) ~ realrinc,
-    fill = ~educcat,
-    alpha = 0.5
+glimpse(StarTrek)
+```
+
+```{r}
+StarTrek %>%
+  head(10) %>%
+  kbl(
+    # add Human Readable column names
+    col.names = c(
+      "Title", "Date", "Author",
+      "Publisher", "Identifier", "Series",
+      "Subseries", "Nchap", "Nword",
+      "Nchar", "Dedication"
+    ),
+    caption = "StarTrek Dataset"
   ) %>%
-  gf_refine(scale_x_log10()) %>%
-  gf_labs(
-    title = "Plot 3D: Income by Education Category, sorted",
-    subtitle = "Log Income"
-  ) %>%
-  gf_labs(
-    x = "Income",
-    y = "Education Category"
-  )
-```
-
-\##**Is the target variable `realrinc` affected by combinations of Qual factors `gender`, `educcat`, `maritalcat` and `childs`?**
-
-```{r}
-wages %>%
-  drop_na() %>%
-  gf_boxplot(reorder(educcat, realrinc) ~ log10(realrinc),
-    fill = ~educcat,
-    alpha = 0.5
-  ) %>%
-  gf_facet_wrap(vars(childs)) %>%
-  gf_refine(scale_fill_brewer(type = "qual", palette = "Dark2")) %>%
-  gf_labs(
-    title = "Plot 4A: Log Income by Education Category and Family Size",
-    x = "Log income",
-    y = "No. of Children"
+  kable_styling(
+    bootstrap_options = c(
+      "striped", "hover",
+      "condensed", "responsive"
+    ),
+    full_width = F, position = "center"
   )
 ```
 
 ```{r}
-wages %>%
-  drop_na() %>%
-  mutate(childs = as_factor(childs)) %>%
-  gf_boxplot(childs ~ log10(realrinc),
-    group = ~childs,
-    fill = ~childs,
-    alpha = 0.5
-  ) %>%
-  gf_facet_wrap(~gender) %>%
-  gf_refine(scale_fill_brewer(type = "qual", palette = "Set3")) %>%
-  gf_labs(
-    title = "Plot 4B: Log Income by Gender and Family Size",
-    x = "Log income",
-    y = "No. of Children"
-  )
-```
-
-### Change
-
-```{r}
-HollywoodMovies2011 -> movies
-glimpse(movies)
-```
-
-```{r}
-movies_quant <- movies %>%
-  drop_na() %>%
-  select(where(is.numeric))
-movies_quant
-```
-
-```{r}
-
-movies %>%
-  gf_point(DomesticGross ~ WorldGross) %>%
-  gf_lm() %>%
-  gf_labs(
-    title = "Scatter Plot",
-    subtitle = "Movie Gross Earnings: Domestics vs World"
+StarTrek_modified <- StarTrek %>%
+  mutate(
+    title = as_factor(title),
+    author = as_factor(author),
+    date = as_factor(date),
+    publisher = as_factor(publisher),
+    identifier = as_factor(identifier),
+    series = as_factor(series)
   )
 ```
 
 ```{r}
-movies %>%
-  gf_point(Profitability ~ OpeningWeekend) %>%
-  gf_lm() %>%
-  gf_labs(
-    title = "Scatter Plot",
-    subtitle = "Movies: Does Opening Week Earnings indicate Profitability?"
-  )
+StarTrek_modified %>% dplyr::count(author)
 ```
 
 ```{r}
-movies %>%
-  gf_point(RottenTomatoes ~ AudienceScore) %>%
-  gf_lm() %>%
-  gf_labs(
-    title = "Scatter Plot",
-    subtitle = "Movie Ratings: Tomatoes vs Audience"
-  )
+StarTrek_modified %>% mosaic::count(author) # does the same thing! Counts!
 ```
 
 ```{r}
-
-movies %>%
-  drop_na() %>%
-  gf_point(RottenTomatoes ~ AudienceScore,
-    color = ~Genre
-  ) %>%
-  gf_lm() %>%
-  gf_labs(
-    title = "Scatter Plot",
-    subtitle = "Movie Ratings: Trends by Genre"
-  )
+skim(StarTrek) %>%
+  kbl(align = "c", caption = "Skim Output for StarTrek Dataset") %>%
+  kable_paper(full_width = F)
 ```
 
+```{r}
+usethis::use_git()
+```
+
+## A2
+
+```{r}
+movie_profit <- read.csv("movie_profit.csv", sep = ";")
+```
+
+```{r}
+glimpse(movie_profit)
+skim(movie_profit)
+```
+
+```{r}
+datatable(movie_profit, options = list(pageLength = 10, autoWidth = TRUE))
+
+```
+
+```{r}
+create_data_dictionary <- function(data) {
+  column_names <- colnames(data)
+  data_types <- sapply(data, class)
+  example_values <- sapply(data, function(col) ifelse(is.factor(col), as.character(col[1]), col[1]))
+  
+  data_dictionary <- data.frame(
+    Field_Name = column_names,
+    Data_Type = data_types,
+    Example_Value = example_values,
+    stringsAsFactors = FALSE
+  )
+  
+  return(data_dictionary)
+}
+
+
+data_dict <- create_data_dictionary(movie_profit)
+print(data_dict)
+
+```
+
+### Bar Plot: Movie Count by Genre
+
+```{r}
+
+ggplot(movie_profit, aes(x = genre)) +
+  geom_bar(fill = "skyblue") +
+  theme_minimal() +
+  labs(title = "Number of Movies by Genre",
+       x = "Genre",
+       y = "Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+Here Target variable is count and predictor variable is genre.
+
+### Line Plot: Profit over Time
+
+```{r}
+ggplot(movie_profit, aes(x = release_date, y = worldwide_gross)) +
+  geom_line(color = "darkgreen") +
+  theme_minimal() +
+  labs(title = "Worldwide Gross Over Time",
+       x = "Release Date",
+       y = "Worldwide Gross")
+```
+
+Target variable- Worldwide Gross
+
+Predictor variable- Release Date
+
+### Scatter Plot: Production Budget vs. Worldwide Gross
+
+```{r}
+ggplot(movie_profit, aes(x = production_budget, y = worldwide_gross)) +
+  geom_point(color = "blue", alpha = 0.6) +
+  theme_minimal() +
+  labs(title = "Production Budget vs Worldwide Gross",
+       x = "Production Budget",
+       y = "Worldwide Gross")
+```
+
+Target variable- Worldwide Gross
+
+Predictor variable- Production Budget
+
+### Box Plot: Profit Ratio by Genre
+
+```{r}
+ggplot(movie_profit, aes(x = genre, y = profit_ratio)) +
+  geom_boxplot(fill = "lightblue") +
+  theme_minimal() +
+  labs(title = "Profit Ratio by Genre",
+       x = "Genre",
+       y = "Profit Ratio") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+#### How do the production budgets vary by genre?
+
+```{r}
+ggplot(movie_profit, aes(x = genre, y = production_budget)) +
+  geom_boxplot(fill = "lightblue", color = "black") +
+  labs(title = "Production Budget by Genre", x = "Genre", y = "Production Budget") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+#### How do worldwide gross revenues differ across genres?
+
+```{r}
+ggplot(movie_profit, aes(x = genre, y = worldwide_gross)) +
+  geom_boxplot(fill = "lightgreen", color = "black") +
+  labs(title = "Worldwide Gross by Genre", x = "Genre", y = "Worldwide Gross") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+#### How does movie success (measured by profit ratio) vary by genre?
+
+```{r}
+ggplot(movie_profit, aes(x = genre, y = profit_ratio)) +
+  geom_boxplot(fill = "lightgreen", color = "black") +
+  labs(title = "Profit Ratio by Genre", x = "Genre", y = "Profit Ratio") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+```
+
+### Histogram: Distribution of Profit Ratios
+
+
+
+#### What is the distribution of movie release years?
 
